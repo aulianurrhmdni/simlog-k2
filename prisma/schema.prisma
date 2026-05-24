@@ -1,0 +1,259 @@
+// ============================================================
+// PRISMA SCHEMA — Sistem Manajemen Inventory PT CAHAYA INDOMIE
+// Database: SQLite via better-sqlite3 adapter (Prisma v7)
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          String    @default("warehouse_staff")
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  barangMasuk       BarangMasuk[]
+  barangKeluar      BarangKeluar[]
+  returBarang       ReturBarang[]
+  laporanStok       LaporanStok[]
+  returApprovedIc   ReturBarang[]  @relation("ApprovedByIC")
+  returApprovedMg   ReturBarang[]  @relation("ApprovedByMG")
+  barangMasukApproved BarangMasuk[] @relation("BarangMasukApproved")
+  barangKeluarApproved BarangKeluar[] @relation("BarangKeluarApproved")
+}
+
+// ============================================================
+// INVENTORY CORE
+// ============================================================
+
+model Produk {
+  id              String    @id @default(uuid())
+  namaProduk      String
+  kategori        String
+  satuan          String    @default("dus")
+  stokMinimum     Int       @default(0)
+  masaKedaluwarsa Int?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  stok            Stok[]
+  parameterStok   ParameterStok[]
+  barangMasuk     BarangMasuk[]
+  barangKeluar    BarangKeluar[]
+  returBarang     ReturBarang[]
+  monitoringStok  MonitoringStok[]
+  alertStok       AlertStok[]
+  permintaan      PermintaanBarang[]
+}
+
+model Stok {
+  id            String    @id @default(uuid())
+  produkId      String
+  jumlahStok    Int       @default(0)
+  lokasiRak     String?
+  statusStok    String    @default("NORMAL")
+  tanggalUpdate DateTime  @default(now()) @updatedAt
+
+  produk        Produk    @relation(fields: [produkId], references: [id], onDelete: Cascade)
+}
+
+model ParameterStok {
+  id                   String   @id @default(uuid())
+  produkId             String
+  batasMinimum         Int
+  hariPeringatanExpired Int     @default(30)
+  aktif                Boolean  @default(true)
+
+  produk               Produk   @relation(fields: [produkId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// SUPPLIER & BARANG MASUK
+// ============================================================
+
+model Supplier {
+  id           String        @id @default(uuid())
+  namaSupplier String
+  kontak       String?
+  alamat       String?
+  createdAt    DateTime      @default(now())
+
+  barangMasuk  BarangMasuk[]
+}
+
+model BarangMasuk {
+  id                String    @id @default(uuid())
+  produkId          String
+  supplierId        String
+  tanggalMasuk      DateTime  @default(now())
+  jumlahMasuk       Int
+  batch             String?
+  tanggalExpired    DateTime?
+  statusPenerimaan  String    @default("PENDING")
+  catatan           String?
+  dicatatOlehId     String?
+  approvedById      String?
+
+  produk            Produk    @relation(fields: [produkId], references: [id])
+  supplier          Supplier  @relation(fields: [supplierId], references: [id])
+  dicatatOleh       User?     @relation(fields: [dicatatOlehId], references: [id])
+  approvedBy        User?     @relation("BarangMasukApproved", fields: [approvedById], references: [id])
+}
+
+// ============================================================
+// BARANG KELUAR
+// ============================================================
+
+model BarangKeluar {
+  id                String            @id @default(uuid())
+  produkId          String
+  permintaanId      String?
+  tanggalKeluar     DateTime          @default(now())
+  jumlahKeluar      Int
+  tujuan            String?
+  statusPengeluaran String            @default("PENDING")
+  catatan           String?
+  dicatatOlehId     String?
+  approvedById      String?
+
+  produk            Produk            @relation(fields: [produkId], references: [id])
+  permintaan        PermintaanBarang? @relation(fields: [permintaanId], references: [id])
+  dicatatOleh       User?             @relation(fields: [dicatatOlehId], references: [id])
+  approvedBy        User?             @relation("BarangKeluarApproved", fields: [approvedById], references: [id])
+  returBarang       ReturBarang[]
+}
+
+// ============================================================
+// RETUR BARANG
+// ============================================================
+
+model ReturBarang {
+  id              String    @id @default(uuid())
+  produkId        String
+  barangKeluarId  String?
+  jenisRetur      String    @default("DARI_PELANGGAN")
+  tanggalRetur    DateTime  @default(now())
+  jumlahRetur     Int
+  alasanRetur     String?
+  statusRetur     String    @default("PENDING")
+  dicatatOlehId   String?
+  approvedByIcId  String?
+  approvedByMgId  String?
+  catatanIc       String?
+  catatanMg       String?
+
+  produk          Produk        @relation(fields: [produkId], references: [id])
+  barangKeluar    BarangKeluar? @relation(fields: [barangKeluarId], references: [id])
+  dicatatOleh     User?         @relation(fields: [dicatatOlehId], references: [id])
+  approvedByIc    User?         @relation("ApprovedByIC", fields: [approvedByIcId], references: [id])
+  approvedByMg    User?         @relation("ApprovedByMG", fields: [approvedByMgId], references: [id])
+}
+
+// ============================================================
+// PELANGGAN & PERMINTAAN BARANG
+// ============================================================
+
+model Pelanggan {
+  id             String             @id @default(uuid())
+  namaPelanggan  String
+  alamat         String?
+  kontak         String?
+  createdAt      DateTime           @default(now())
+
+  permintaan     PermintaanBarang[]
+}
+
+model PermintaanBarang {
+  id                String    @id @default(uuid())
+  pelangganId       String
+  produkId          String?
+  tanggalPermintaan DateTime  @default(now())
+  jumlahPermintaan  Int
+  statusPermintaan  String    @default("PENDING")
+
+  pelanggan         Pelanggan     @relation(fields: [pelangganId], references: [id])
+  produk            Produk?       @relation(fields: [produkId], references: [id])
+  barangKeluar      BarangKeluar[]
+}
+
+// ============================================================
+// MONITORING & ALERT
+// ============================================================
+
+model MonitoringStok {
+  id            String    @id @default(uuid())
+  produkId      String
+  waktuMonitor  DateTime  @default(now())
+  stokAktual    Int
+  stokMinimum   Int
+  status        String    @default("NORMAL")
+
+  produk        Produk    @relation(fields: [produkId], references: [id])
+}
+
+model AlertStok {
+  id          String    @id @default(uuid())
+  produkId    String
+  jenisAlert  String
+  pesan       String?
+  waktuAlert  DateTime  @default(now())
+  status      String    @default("AKTIF")
+
+  produk      Produk    @relation(fields: [produkId], references: [id])
+}
+
+// ============================================================
+// LAPORAN
+// ============================================================
+
+model LaporanStok {
+  id             String    @id @default(uuid())
+  jenisLaporan   String
+  tanggalLaporan DateTime  @default(now())
+  periodeAwal    DateTime?
+  periodeAkhir   DateTime?
+  dibuatOlehId   String?
+
+  dibuatOleh     User?     @relation(fields: [dibuatOlehId], references: [id])
+}
+
+// ============================================================
+// PENGIRIMAN (dipertahankan agar data lama tidak rusak)
+// ============================================================
+
+model PengirimanBarang {
+  id                String            @id @default(uuid())
+  permintaanId      String?
+  tanggalJadwal     DateTime?
+  tanggalKirim      DateTime?
+  statusPengiriman  String            @default("DIJADWALKAN")
+  catatan           String?
+  dibuatOlehId      String?
+}
+
+// ============================================================
+// KELUHAN PELANGGAN (dipertahankan agar data lama tidak rusak)
+// ============================================================
+
+model KeluhanPersediaan {
+  id               String    @id @default(uuid())
+  pelangganId      String
+  produkId         String
+  deskripsiKeluhan String
+  tanggalKeluhan   DateTime  @default(now())
+  statusKeluhan    String    @default("OPEN")
+  dicatatOlehId    String?
+}
