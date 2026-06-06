@@ -6,13 +6,20 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req
-  const isLoggedIn = !!session
   const path = nextUrl.pathname
 
   const isLoginPage = path === '/login'
   const isApi = path.startsWith('/api')
 
   if (isApi) return NextResponse.next()
+
+  const role = session?.user?.role as string | undefined
+  const validRoles = ['admin', 'inventory_control', 'warehouse_staff', 'manager_gudang']
+
+  // "Login valid" = ada sesi DAN role-nya dikenali.
+  // Sesi dengan role usang (mis. token lama 'superadmin') dianggap tidak valid,
+  // supaya tidak terjadi loop redirect /login <-> /dashboard (error 307).
+  const isLoggedIn = !!session && validRoles.includes(role ?? '')
 
   if (isLoginPage) {
     if (isLoggedIn) {
@@ -21,11 +28,9 @@ export default auth((req) => {
     return NextResponse.next()
   }
 
-  if (!isLoggedIn && path !== '/login') {
+  if (!isLoggedIn) {
     return NextResponse.redirect(new URL('/login', nextUrl))
   }
-
-  const role = session?.user?.role as string | undefined
 
   // Admin — akses penuh
   if (role === 'admin') return NextResponse.next()
