@@ -310,7 +310,7 @@ async function main() {
 
   console.log('\n🎉 Seeding selesai!')
   console.log('\n📋 Akun Login PT CAHAYA INDOMIE:')
-  console.log('   admin@cahayaindomie.com       → admin123        (Super Admin)')
+  console.log('   admin@cahayaindomie.com       → admin123        (Admin)')
   console.log('   inventory@cahayaindomie.com   → inventory123    (Inventory Control Staf)')
   console.log('   gudang@cahayaindomie.com      → gudang123       (Staf Gudang)')
   console.log('   manager@cahayaindomie.com     → manager123      (Manajer Gudang)')
