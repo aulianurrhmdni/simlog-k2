@@ -1,6 +1,13 @@
 // ============================================================
 // SEED — Sistem Manajemen Inventory PT CAHAYA INDOMIE
 // ============================================================
+// CATATAN ID:
+// Semua ID dibuat mudah dibaca & sesuai object-nya, contoh:
+//   produk1, produk2 ... | supplier1 | pelanggan1 | stok1 |
+//   user1 | barangmasuk1 | barangkeluar1 | permintaan1 |
+//   retur1 | alert1 | monitoring1 | parameter1
+// (Schema tetap @default(uuid()); ID di sini hanya di-set eksplisit)
+// ============================================================
 
 import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
@@ -32,13 +39,13 @@ async function main() {
   console.log('🌱 Mulai seeding database PT CAHAYA INDOMIE...')
 
   // ============================================================
-  // USERS — 4 role sesuai revisi.md
+  // USERS — 4 role sesuai revisi.md  | ID: user1..user4
   // ============================================================
   const users = [
-    { email: 'admin@cahayaindomie.com',     name: 'Super Admin',          role: 'superadmin',        password: 'admin123' },
-    { email: 'inventory@cahayaindomie.com', name: 'Budi Santoso',         role: 'inventory_control', password: 'inventory123' },
-    { email: 'gudang@cahayaindomie.com',    name: 'Siti Rahayu',          role: 'warehouse_staff',   password: 'gudang123' },
-    { email: 'manager@cahayaindomie.com',   name: 'Ahmad Fauzi',          role: 'manager_gudang',    password: 'manager123' },
+    { id: 'user1', email: 'admin@cahayaindomie.com',     name: 'Super Admin',  role: 'superadmin',        password: 'admin123' },
+    { id: 'user2', email: 'inventory@cahayaindomie.com', name: 'Budi Santoso', role: 'inventory_control', password: 'inventory123' },
+    { id: 'user3', email: 'gudang@cahayaindomie.com',    name: 'Siti Rahayu',  role: 'warehouse_staff',   password: 'gudang123' },
+    { id: 'user4', email: 'manager@cahayaindomie.com',   name: 'Ahmad Fauzi',  role: 'manager_gudang',    password: 'manager123' },
   ]
 
   const createdUsers: Record<string, string> = {}
@@ -48,58 +55,52 @@ async function main() {
     const user = await prisma.user.upsert({
       where: { email: u.email },
       update: { name: u.name, role: u.role, password: hashed },
-      create: { email: u.email, name: u.name, role: u.role, password: hashed },
+      create: { id: u.id, email: u.email, name: u.name, role: u.role, password: hashed },
     })
     createdUsers[u.role] = user.id
-    console.log(`  ✅ User: ${u.email} (${u.role})`)
+    console.log(`  ✅ User: ${u.email} (${u.role}) → ${user.id}`)
   }
 
   // ============================================================
-  // SUPPLIER — hanya Indofood (produsen Indomie)
+  // SUPPLIER — hanya Indofood (produsen Indomie) | ID: supplier1..
   // ============================================================
   const suppliers = [
-    { namaSupplier: 'PT. Indofood CBP Sukses Makmur', kontak: '021-7263625', alamat: 'Jakarta Barat, DKI Jakarta' },
-    { namaSupplier: 'PT. Indofood Sukses Makmur Tbk', kontak: '021-5795-8822', alamat: 'Sudirman Plaza, Jakarta' },
+    { id: 'supplier1', namaSupplier: 'PT. Indofood CBP Sukses Makmur', kontak: '021-7263625',   alamat: 'Jakarta Barat, DKI Jakarta' },
+    { id: 'supplier2', namaSupplier: 'PT. Indofood Sukses Makmur Tbk', kontak: '021-5795-8822', alamat: 'Sudirman Plaza, Jakarta' },
   ]
 
   const createdSuppliers: string[] = []
   for (const s of suppliers) {
-    const sup = await prisma.supplier.upsert({
-      where: { id: s.namaSupplier },
-      update: {},
-      create: s,
-    }).catch(async () => {
-      return await prisma.supplier.create({ data: s })
-    })
+    const sup = await prisma.supplier.create({ data: s })
     createdSuppliers.push(sup.id)
-    console.log(`  ✅ Supplier: ${s.namaSupplier}`)
+    console.log(`  ✅ Supplier: ${s.namaSupplier} → ${sup.id}`)
   }
 
   // ============================================================
-  // PRODUK — khusus Indomie, satuan = dus, kategori Goreng/Kuah
+  // PRODUK — khusus Indomie | ID: produk1..produk10
   // ============================================================
   const produkList = [
-    { namaProduk: 'Indomie Goreng Original',      kategori: 'Goreng', satuan: 'dus', stokMinimum: 50, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Goreng Pedas',          kategori: 'Goreng', satuan: 'dus', stokMinimum: 40, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Goreng Rendang',        kategori: 'Goreng', satuan: 'dus', stokMinimum: 35, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Goreng Cakalang',       kategori: 'Goreng', satuan: 'dus', stokMinimum: 30, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Goreng Jumbo',          kategori: 'Goreng', satuan: 'dus', stokMinimum: 25, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Kuah Ayam Bawang',      kategori: 'Kuah',   satuan: 'dus', stokMinimum: 50, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Kuah Soto Mie',         kategori: 'Kuah',   satuan: 'dus', stokMinimum: 40, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Kuah Kaldu Ayam',       kategori: 'Kuah',   satuan: 'dus', stokMinimum: 35, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Kuah Coto Makassar',    kategori: 'Kuah',   satuan: 'dus', stokMinimum: 20, masaKedaluwarsa: 365 },
-    { namaProduk: 'Indomie Kuah Aceh',             kategori: 'Kuah',   satuan: 'dus', stokMinimum: 20, masaKedaluwarsa: 365 },
+    { id: 'produk1',  namaProduk: 'Indomie Goreng Original',   kategori: 'Goreng', satuan: 'dus', stokMinimum: 50, masaKedaluwarsa: 365 },
+    { id: 'produk2',  namaProduk: 'Indomie Goreng Pedas',      kategori: 'Goreng', satuan: 'dus', stokMinimum: 40, masaKedaluwarsa: 365 },
+    { id: 'produk3',  namaProduk: 'Indomie Goreng Rendang',    kategori: 'Goreng', satuan: 'dus', stokMinimum: 35, masaKedaluwarsa: 365 },
+    { id: 'produk4',  namaProduk: 'Indomie Goreng Cakalang',   kategori: 'Goreng', satuan: 'dus', stokMinimum: 30, masaKedaluwarsa: 365 },
+    { id: 'produk5',  namaProduk: 'Indomie Goreng Jumbo',      kategori: 'Goreng', satuan: 'dus', stokMinimum: 25, masaKedaluwarsa: 365 },
+    { id: 'produk6',  namaProduk: 'Indomie Kuah Ayam Bawang',  kategori: 'Kuah',   satuan: 'dus', stokMinimum: 50, masaKedaluwarsa: 365 },
+    { id: 'produk7',  namaProduk: 'Indomie Kuah Soto Mie',     kategori: 'Kuah',   satuan: 'dus', stokMinimum: 40, masaKedaluwarsa: 365 },
+    { id: 'produk8',  namaProduk: 'Indomie Kuah Kaldu Ayam',   kategori: 'Kuah',   satuan: 'dus', stokMinimum: 35, masaKedaluwarsa: 365 },
+    { id: 'produk9',  namaProduk: 'Indomie Kuah Coto Makassar',kategori: 'Kuah',   satuan: 'dus', stokMinimum: 20, masaKedaluwarsa: 365 },
+    { id: 'produk10', namaProduk: 'Indomie Kuah Aceh',         kategori: 'Kuah',   satuan: 'dus', stokMinimum: 20, masaKedaluwarsa: 365 },
   ]
 
   const createdProduk: string[] = []
   for (const p of produkList) {
     const prod = await prisma.produk.create({ data: p })
     createdProduk.push(prod.id)
-    console.log(`  ✅ Produk: ${p.namaProduk}`)
+    console.log(`  ✅ Produk: ${p.namaProduk} → ${prod.id}`)
   }
 
   // ============================================================
-  // STOK AWAL & PARAMETER STOK
+  // STOK AWAL & PARAMETER STOK | ID: stok1.. & parameter1..
   // ============================================================
   const stokAwal = [120, 85, 15, 90, 10, 200, 45, 70, 22, 18]
   const lokasiRak = ['A-01', 'A-02', 'A-03', 'A-04', 'A-05', 'B-01', 'B-02', 'B-03', 'B-04', 'B-05']
@@ -110,45 +111,45 @@ async function main() {
     const status = jumlah <= min ? (jumlah <= min / 2 ? 'KRITIS' : 'RENDAH') : 'NORMAL'
 
     await prisma.stok.create({
-      data: { produkId: createdProduk[i], jumlahStok: jumlah, lokasiRak: lokasiRak[i], statusStok: status },
+      data: { id: `stok${i + 1}`, produkId: createdProduk[i], jumlahStok: jumlah, lokasiRak: lokasiRak[i], statusStok: status },
     })
     await prisma.parameterStok.create({
-      data: { produkId: createdProduk[i], batasMinimum: min, hariPeringatanExpired: 30, aktif: true },
+      data: { id: `parameter${i + 1}`, produkId: createdProduk[i], batasMinimum: min, hariPeringatanExpired: 30, aktif: true },
     })
   }
   console.log('  ✅ Stok & ParameterStok awal berhasil dibuat')
 
   // ============================================================
-  // PELANGGAN
+  // PELANGGAN | ID: pelanggan1..pelanggan5
   // ============================================================
   const pelangganList = [
-    { namaPelanggan: 'Toko Sembako Makmur',   alamat: 'Jl. Pasar Raya No. 12, Jakarta',   kontak: '0812-1111-2222' },
-    { namaPelanggan: 'Minimarket Sejahtera',  alamat: 'Jl. Merdeka No. 45, Bandung',      kontak: '0813-3333-4444' },
-    { namaPelanggan: 'Grosir Nusantara',      alamat: 'Jl. Pemuda No. 8, Surabaya',       kontak: '0814-5555-6666' },
-    { namaPelanggan: 'Warung Bu Sari',        alamat: 'Jl. Kenanga No. 3, Yogyakarta',    kontak: '0815-7777-8888' },
-    { namaPelanggan: 'PT. Distribusi Lokal',  alamat: 'Jl. Industri No. 99, Tangerang',   kontak: '021-5566778' },
+    { id: 'pelanggan1', namaPelanggan: 'Toko Sembako Makmur',  alamat: 'Jl. Pasar Raya No. 12, Jakarta',  kontak: '0812-1111-2222' },
+    { id: 'pelanggan2', namaPelanggan: 'Minimarket Sejahtera', alamat: 'Jl. Merdeka No. 45, Bandung',     kontak: '0813-3333-4444' },
+    { id: 'pelanggan3', namaPelanggan: 'Grosir Nusantara',     alamat: 'Jl. Pemuda No. 8, Surabaya',      kontak: '0814-5555-6666' },
+    { id: 'pelanggan4', namaPelanggan: 'Warung Bu Sari',       alamat: 'Jl. Kenanga No. 3, Yogyakarta',   kontak: '0815-7777-8888' },
+    { id: 'pelanggan5', namaPelanggan: 'PT. Distribusi Lokal', alamat: 'Jl. Industri No. 99, Tangerang',  kontak: '021-5566778' },
   ]
 
   const createdPelanggan: string[] = []
   for (const pl of pelangganList) {
     const p = await prisma.pelanggan.create({ data: pl })
     createdPelanggan.push(p.id)
-    console.log(`  ✅ Pelanggan: ${pl.namaPelanggan}`)
+    console.log(`  ✅ Pelanggan: ${pl.namaPelanggan} → ${p.id}`)
   }
 
   // ============================================================
-  // BARANG MASUK (sample)
+  // BARANG MASUK (sample) | ID: barangmasuk1..barangmasuk5
   // ============================================================
   const gudangId = createdUsers['warehouse_staff']
   const managerId = createdUsers['manager_gudang']
   const icId = createdUsers['inventory_control']
 
   const sampleMasuk = [
-    { produkId: createdProduk[0], supplierId: createdSuppliers[0], jumlahMasuk: 100, batch: 'B-2026-001', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-01'), approvedById: managerId },
-    { produkId: createdProduk[1], supplierId: createdSuppliers[0], jumlahMasuk: 80,  batch: 'B-2026-002', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-05'), approvedById: icId },
-    { produkId: createdProduk[5], supplierId: createdSuppliers[1], jumlahMasuk: 200, batch: 'B-2026-003', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-10'), approvedById: managerId },
-    { produkId: createdProduk[6], supplierId: createdSuppliers[1], jumlahMasuk: 50,  batch: 'B-2026-004', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-20'), approvedById: null },
-    { produkId: createdProduk[2], supplierId: createdSuppliers[0], jumlahMasuk: 30,  batch: 'B-2026-005', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-22'), approvedById: null },
+    { id: 'barangmasuk1', produkId: createdProduk[0], supplierId: createdSuppliers[0], jumlahMasuk: 100, batch: 'B-2026-001', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-01'), approvedById: managerId },
+    { id: 'barangmasuk2', produkId: createdProduk[1], supplierId: createdSuppliers[0], jumlahMasuk: 80,  batch: 'B-2026-002', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-05'), approvedById: icId },
+    { id: 'barangmasuk3', produkId: createdProduk[5], supplierId: createdSuppliers[1], jumlahMasuk: 200, batch: 'B-2026-003', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-10'), approvedById: managerId },
+    { id: 'barangmasuk4', produkId: createdProduk[6], supplierId: createdSuppliers[1], jumlahMasuk: 50,  batch: 'B-2026-004', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-20'), approvedById: null },
+    { id: 'barangmasuk5', produkId: createdProduk[2], supplierId: createdSuppliers[0], jumlahMasuk: 30,  batch: 'B-2026-005', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-22'), approvedById: null },
   ]
 
   for (const bm of sampleMasuk) {
@@ -159,10 +160,11 @@ async function main() {
   console.log('  ✅ Sample BarangMasuk dibuat')
 
   // ============================================================
-  // BARANG KELUAR (sample — beberapa PENDING, beberapa DISETUJUI)
+  // BARANG KELUAR (sample) | ID: permintaan1.. & barangkeluar1..
   // ============================================================
   const permintaan1 = await prisma.permintaanBarang.create({
     data: {
+      id: 'permintaan1',
       pelangganId: createdPelanggan[0],
       produkId: createdProduk[0],
       jumlahPermintaan: 50,
@@ -173,6 +175,7 @@ async function main() {
 
   const barangKeluar1 = await prisma.barangKeluar.create({
     data: {
+      id: 'barangkeluar1',
       produkId: createdProduk[0],
       permintaanId: permintaan1.id,
       jumlahKeluar: 50,
@@ -186,6 +189,7 @@ async function main() {
 
   const permintaan2 = await prisma.permintaanBarang.create({
     data: {
+      id: 'permintaan2',
       pelangganId: createdPelanggan[1],
       produkId: createdProduk[5],
       jumlahPermintaan: 30,
@@ -196,6 +200,7 @@ async function main() {
 
   await prisma.barangKeluar.create({
     data: {
+      id: 'barangkeluar2',
       produkId: createdProduk[5],
       permintaanId: permintaan2.id,
       jumlahKeluar: 30,
@@ -208,11 +213,12 @@ async function main() {
   console.log('  ✅ Permintaan & BarangKeluar dibuat')
 
   // ============================================================
-  // RETUR BARANG — sample dengan 2 jenis dan status berbeda
+  // RETUR BARANG (sample) | ID: retur1, retur2
   // ============================================================
   // Retur dari pelanggan — menunggu approval IC
   await prisma.returBarang.create({
     data: {
+      id: 'retur1',
       produkId: createdProduk[0],
       barangKeluarId: barangKeluar1.id,
       jenisRetur: 'DARI_PELANGGAN',
@@ -227,6 +233,7 @@ async function main() {
   // Retur ke supplier — sudah disetujui Manajer Gudang
   await prisma.returBarang.create({
     data: {
+      id: 'retur2',
       produkId: createdProduk[2],
       jenisRetur: 'KE_SUPPLIER',
       jumlahRetur: 10,
@@ -241,21 +248,22 @@ async function main() {
   console.log('  ✅ Sample ReturBarang dibuat')
 
   // ============================================================
-  // ALERT STOK
+  // ALERT STOK | ID: alert1, alert2, alert3
   // ============================================================
   await prisma.alertStok.createMany({
     data: [
-      { produkId: createdProduk[2], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Goreng Rendang mencapai batas kritis (15/35 dus)', status: 'AKTIF' },
-      { produkId: createdProduk[4], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Goreng Jumbo mencapai batas kritis (10/25 dus)', status: 'AKTIF' },
-      { produkId: createdProduk[8], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Kuah Coto Makassar di bawah minimum (22/20 dus)', status: 'AKTIF' },
+      { id: 'alert1', produkId: createdProduk[2], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Goreng Rendang mencapai batas kritis (15/35 dus)', status: 'AKTIF' },
+      { id: 'alert2', produkId: createdProduk[4], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Goreng Jumbo mencapai batas kritis (10/25 dus)', status: 'AKTIF' },
+      { id: 'alert3', produkId: createdProduk[8], jenisAlert: 'STOK_MINIMUM', pesan: 'Stok Indomie Kuah Coto Makassar di bawah minimum (22/20 dus)', status: 'AKTIF' },
     ]
   })
   console.log('  ✅ Alert stok dibuat')
 
   // ============================================================
-  // MONITORING STOK
+  // MONITORING STOK | ID: monitoring1..monitoring10
   // ============================================================
   const monitorData = createdProduk.map((id, i) => ({
+    id: `monitoring${i + 1}`,
     produkId: id,
     stokAktual: stokAwal[i],
     stokMinimum: produkList[i].stokMinimum,
