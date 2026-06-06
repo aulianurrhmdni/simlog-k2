@@ -28,18 +28,39 @@ interface Laporan {
   dibuatOleh?: { name: string | null } | null
 }
 
+interface KlasifikasiRow {
+  tanggal: string
+  jenis: string
+  produk: string
+  kategori: string
+  jumlah: number
+  supplier: string
+  pelanggan: string
+  sumberRetur: string
+  status: string
+}
+
 interface LaporanClientProps {
   role: string
   laporanList: Laporan[]
+  klasifikasi: KlasifikasiRow[]
 }
 
-export function LaporanClient({ role, laporanList }: LaporanClientProps) {
+const JENIS_STYLES: Record<string, string> = {
+  'Barang Masuk': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Barang Keluar': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Retur Barang': 'bg-purple-50 text-purple-700 border-purple-200',
+}
+
+export function LaporanClient({ role, laporanList, klasifikasi }: LaporanClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [jenisLaporan, setJenisLaporan] = useState('Laporan Stok Saat Ini')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   const canExport = role === 'superadmin' || role === 'manager_gudang'
+  // Inventory Control dapat mengunduh laporan Excel walau tidak bisa membuat entri baru
+  const canDownload = canExport || role === 'inventory_control'
 
   async function handleDownload(item: Laporan) {
     setDownloadingId(item.id)
@@ -161,6 +182,7 @@ export function LaporanClient({ role, laporanList }: LaporanClientProps) {
                       <SelectItem value="Laporan Alur Barang Masuk">Laporan Alur Barang Masuk</SelectItem>
                       <SelectItem value="Laporan Alur Barang Keluar">Laporan Alur Barang Keluar</SelectItem>
                       <SelectItem value="Laporan Retur Barang">Laporan Retur Barang</SelectItem>
+                      <SelectItem value="Laporan Klasifikasi Inventory">Laporan Klasifikasi Inventory</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -242,8 +264,9 @@ export function LaporanClient({ role, laporanList }: LaporanClientProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50"
-                            disabled={downloadingId === item.id}
+                            className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50 disabled:opacity-40"
+                            disabled={downloadingId === item.id || !canDownload}
+                            title={canDownload ? 'Unduh laporan Excel' : 'Anda tidak memiliki akses unduh'}
                             onClick={() => handleDownload(item)}
                           >
                             {downloadingId === item.id ? (
@@ -280,6 +303,84 @@ export function LaporanClient({ role, laporanList }: LaporanClientProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tabel Klasifikasi Inventory */}
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Klasifikasi Inventory</CardTitle>
+            <CardDescription>
+              Rekapitulasi barang masuk, keluar, dan retur — lengkap dengan supplier, pelanggan, dan sumber retur.
+            </CardDescription>
+          </div>
+          {canDownload && klasifikasi.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 shrink-0 border-teal-200 text-teal-700 hover:bg-teal-50"
+              disabled={downloadingId === 'klasifikasi'}
+              onClick={() =>
+                handleDownload({
+                  id: 'klasifikasi',
+                  jenisLaporan: 'Laporan Klasifikasi Inventory',
+                  tanggalLaporan: new Date(),
+                  periodeAwal: null,
+                  periodeAkhir: null,
+                } as Laporan)
+              }
+            >
+              <Download className="h-4 w-4" />
+              {downloadingId === 'klasifikasi' ? 'Mengunduh…' : 'Unduh Excel'}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Jenis</TableHead>
+                  <TableHead>Produk</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead className="text-right">Jumlah (dus)</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Pelanggan / Customer</TableHead>
+                  <TableHead>Sumber Retur</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {klasifikasi.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12 text-slate-400">
+                      Belum ada transaksi inventory
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  klasifikasi.map((r, i) => (
+                    <TableRow key={i} className="hover:bg-slate-50/60">
+                      <TableCell className="text-sm text-slate-600 whitespace-nowrap">{r.tanggal}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${JENIS_STYLES[r.jenis] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                          {r.jenis}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-slate-800">{r.produk}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{r.kategori}</TableCell>
+                      <TableCell className="text-sm text-right font-semibold text-slate-700">{r.jumlah}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{r.supplier}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{r.pelanggan}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{r.sumberRetur}</TableCell>
+                      <TableCell className="text-xs text-slate-500">{r.status}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

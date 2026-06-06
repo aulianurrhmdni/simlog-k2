@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/ui/status-badge'
 import {
@@ -10,13 +9,10 @@ import {
   ArrowUpRight,
   Bell,
   Clock,
-  RefreshCw,
   BarChart3,
-  Layers,
-  Activity,
+  Soup,
+  Sparkles,
 } from 'lucide-react'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +31,7 @@ export default async function DashboardPage() {
     recentMasuk,
     recentKeluar,
     stokData,
+    produkTerbaru,
   ] = await Promise.all([
     prisma.produk.count(),
 
@@ -68,6 +65,13 @@ export default async function DashboardPage() {
     prisma.stok.findMany({
       include: { produk: true },
       orderBy: { jumlahStok: 'asc' },
+    }),
+
+    // Menu produk terbaru — otomatis tampil saat produk baru ditambahkan ke database
+    prisma.produk.findMany({
+      include: { varianRasa: true },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
     }),
   ])
 
@@ -179,10 +183,60 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* ── Stock level bar chart + Quick actions ─────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Bar chart */}
-        <Card className="lg:col-span-2">
+      {/* ── Menu produk terbaru ─────────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Soup className="h-5 w-5 text-teal-600" />
+            <CardTitle className="text-base">Produk Menu Terbaru</CardTitle>
+          </div>
+          <CardDescription>
+            Produk terbaru yang ditambahkan ke katalog PT CAHAYA INDOMIE
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {produkTerbaru.length === 0 ? (
+            <p className="text-sm text-slate-400 py-6 text-center">Belum ada produk</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {produkTerbaru.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/60 p-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {p.namaProduk}
+                      </p>
+                      {i === 0 && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 shrink-0">
+                          <Sparkles className="h-2.5 w-2.5" /> Baru
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                      {p.varianRasa?.namaVarian ?? p.kategori} · {fmt(p.createdAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium shrink-0 ${
+                      p.kategori === 'Goreng'
+                        ? 'bg-orange-50 text-orange-700 border-orange-200'
+                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                    }`}
+                  >
+                    {p.kategori}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Stock level bar chart ─────────────────────── */}
+      <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-slate-500" />
@@ -226,32 +280,6 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Quick actions */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-slate-500" />
-              <CardTitle className="text-base">Aksi Cepat</CardTitle>
-            </div>
-            <CardDescription>Navigasi ke modul utama</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Link href="/dashboard/barang-masuk" className={cn(buttonVariants({ variant: 'default' }), "w-full justify-start gap-2 bg-emerald-600 hover:bg-emerald-700 text-white")}>
-              <ArrowDownRight className="h-4 w-4" />
-              Penerimaan Barang
-            </Link>
-            <Link href="/dashboard/stok" className={cn(buttonVariants({ variant: 'outline' }), "w-full justify-start gap-2 border-teal-200 text-teal-700 hover:bg-teal-50")}>
-              <Layers className="h-4 w-4" />
-              Kelola Stok
-            </Link>
-            <Link href="/dashboard/monitoring" className={cn(buttonVariants({ variant: 'outline' }), "w-full justify-start gap-2 border-blue-200 text-blue-700 hover:bg-blue-50")}>
-              <RefreshCw className="h-4 w-4" />
-              Monitoring Stok
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* ── Alert section ────────────────────────────────────────────────── */}
       <Card>

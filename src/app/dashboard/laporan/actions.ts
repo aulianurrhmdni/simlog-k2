@@ -4,6 +4,126 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
+const DOWNLOAD_ROLES = ['superadmin', 'manager_gudang', 'inventory_control']
+
+export type KlasifikasiRow = {
+  tanggal: string
+  jenis: string
+  produk: string
+  kategori: string
+  jumlah: number
+  supplier: string
+  pelanggan: string
+  sumberRetur: string
+  status: string
+}
+
+// Bangun tabel klasifikasi inventory gabungan (masuk + keluar + retur)
+// dengan detail supplier, pelanggan, dan sumber retur.
+async function buildKlasifikasi(
+  pAwal: Date | null,
+  pAkhir: Date | null
+): Promise<KlasifikasiRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rangeFor = (field: string): any => {
+    if (!pAwal && !pAkhir) return {}
+    const r: any = {} // eslint-disable-line @typescript-eslint/no-explicit-any
+    r[field] = {}
+    if (pAwal) r[field].gte = pAwal
+    if (pAkhir) r[field].lte = pAkhir
+    return r
+  }
+
+  const [masuk, keluar, retur] = await Promise.all([
+    prisma.barangMasuk.findMany({
+      where: rangeFor('tanggalMasuk'),
+      include: { produk: true, supplier: true },
+    }),
+    prisma.barangKeluar.findMany({
+      where: rangeFor('tanggalKeluar'),
+      include: { produk: true, permintaan: { include: { pelanggan: true } } },
+    }),
+    prisma.returBarang.findMany({
+      where: rangeFor('tanggalRetur'),
+      include: {
+        produk: true,
+        barangKeluar: { include: { permintaan: { include: { pelanggan: true } } } },
+      },
+    }),
+  ])
+
+  const rows: (KlasifikasiRow & { _sort: number })[] = []
+  const fmt = (d: Date) => d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  for (const m of masuk) {
+    rows.push({
+      tanggal: fmt(m.tanggalMasuk),
+      jenis: 'Barang Masuk',
+      produk: m.produk.namaProduk,
+      kategori: m.produk.kategori,
+      jumlah: m.jumlahMasuk,
+      supplier: m.supplier.namaSupplier,
+      pelanggan: '-',
+      sumberRetur: '-',
+      status: m.statusPenerimaan,
+      _sort: m.tanggalMasuk.getTime(),
+    })
+  }
+  for (const k of keluar) {
+    rows.push({
+      tanggal: fmt(k.tanggalKeluar),
+      jenis: 'Barang Keluar',
+      produk: k.produk.namaProduk,
+      kategori: k.produk.kategori,
+      jumlah: k.jumlahKeluar,
+      supplier: '-',
+      pelanggan: k.permintaan?.pelanggan?.namaPelanggan ?? k.tujuan ?? '-',
+      sumberRetur: '-',
+      status: k.statusPengeluaran,
+      _sort: k.tanggalKeluar.getTime(),
+    })
+  }
+  for (const r of retur) {
+    const dariPelanggan = r.jenisRetur === 'DARI_PELANGGAN'
+    rows.push({
+      tanggal: fmt(r.tanggalRetur),
+      jenis: 'Retur Barang',
+      produk: r.produk.namaProduk,
+      kategori: r.produk.kategori,
+      jumlah: r.jumlahRetur,
+      supplier: dariPelanggan ? '-' : 'Dikembalikan ke Supplier',
+      pelanggan: dariPelanggan
+        ? (r.barangKeluar?.permintaan?.pelanggan?.namaPelanggan ?? r.barangKeluar?.tujuan ?? '-')
+        : '-',
+      sumberRetur: dariPelanggan ? 'Retur dari Pelanggan' : 'Retur ke Supplier',
+      status: r.statusRetur,
+      _sort: r.tanggalRetur.getTime(),
+    })
+  }
+
+  rows.sort((a, b) => b._sort - a._sort)
+  return rows.map(({ _sort, ...rest }) => rest) // eslint-disable-line @typescript-eslint/no-unused-vars
+}
+
+export async function getKlasifikasiInventory(
+  periodeAwal?: string | Date | null,
+  periodeAkhir?: string | Date | null
+) {
+  const session = await auth()
+  if (!session?.user) return { error: 'Unauthorized' }
+
+  const pAwal = periodeAwal ? new Date(periodeAwal) : null
+  const pAkhir = periodeAkhir ? new Date(periodeAkhir) : null
+  if (pAkhir) pAkhir.setHours(23, 59, 59, 999)
+
+  try {
+    const data = await buildKlasifikasi(pAwal, pAkhir)
+    return { success: true, data }
+  } catch (e: unknown) {
+    return { error: (e as Error).message }
+  }
+}
+
 export async function createLaporan(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
@@ -42,8 +162,9 @@ export async function getLaporanExportData(
   if (!session?.user) return { error: 'Unauthorized' }
 
   const role = session.user.role
-  if (role !== 'superadmin' && role !== 'manager_gudang') {
-    return { error: 'Hanya Super Admin dan Manajer Gudang yang dapat mengekspor data' }
+  // Inventory Control juga boleh mengunduh laporan (hanya tidak boleh membuat/ekspor entri baru)
+  if (!DOWNLOAD_ROLES.includes(role)) {
+    return { error: 'Anda tidak memiliki akses untuk mengunduh data laporan' }
   }
 
   const pAwal = periodeAwal ? new Date(periodeAwal) : null
@@ -176,6 +297,24 @@ export async function getLaporanExportData(
           'Dicatat Oleh': r.dicatatOleh?.name ?? '-',
           'Disetujui IC Oleh': r.approvedByIc?.name ?? '-',
           'Disetujui MG Oleh': r.approvedByMg?.name ?? '-',
+        })),
+      }
+    }
+
+    if (jenisLaporan === 'Laporan Klasifikasi Inventory') {
+      const rows = await buildKlasifikasi(pAwal, pAkhir)
+      return {
+        success: true,
+        data: rows.map((r) => ({
+          'Tanggal': r.tanggal,
+          'Jenis Transaksi': r.jenis,
+          'Nama Produk': r.produk,
+          'Kategori': r.kategori,
+          'Jumlah (dus)': r.jumlah,
+          'Supplier': r.supplier,
+          'Pelanggan / Customer': r.pelanggan,
+          'Sumber Retur': r.sumberRetur,
+          'Status': r.status,
         })),
       }
     }

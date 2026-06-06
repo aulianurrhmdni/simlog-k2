@@ -225,7 +225,10 @@ export function ReturClient({ role }: ReturClientProps) {
           <form action={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label>Jenis Retur</Label>
-              <Select value={jenisRetur} onValueChange={(val) => setJenisRetur(val || '')}>
+              <Select value={jenisRetur} onValueChange={(val) => setJenisRetur(val || '')} items={[
+                { label: 'Dari Pelanggan (Barang Kembali ke Gudang)', value: 'DARI_PELANGGAN' },
+                { label: 'Ke Supplier (Mengembalikan Barang Rusak)', value: 'KE_SUPPLIER' },
+              ]}>
                 <SelectTrigger><SelectValue placeholder="Pilih Jenis" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DARI_PELANGGAN">Dari Pelanggan (Barang Kembali ke Gudang)</SelectItem>
@@ -239,7 +242,7 @@ export function ReturClient({ role }: ReturClientProps) {
               <Select value={selectedProdukId} onValueChange={(val) => {
                 setSelectedProdukId(val || '')
                 setSelectedBarangKeluarId('')
-              }}>
+              }} items={produkList.map((p) => ({ label: p.nama_produk, value: p.id_produk }))}>
                 <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
                 <SelectContent>
                   {produkList.map((p) => (
@@ -252,7 +255,7 @@ export function ReturClient({ role }: ReturClientProps) {
             {jenisRetur === 'DARI_PELANGGAN' && selectedProdukId && (
               <div className="space-y-2">
                 <Label>Transaksi Barang Keluar Terkait (Validasi Kritis)</Label>
-                <Select value={selectedBarangKeluarId} onValueChange={(val) => setSelectedBarangKeluarId(val || '')}>
+                <Select value={selectedBarangKeluarId} onValueChange={(val) => setSelectedBarangKeluarId(val || '')} items={filteredBarangKeluar.map((k) => ({ label: `Tujuan: ${k.tujuan || 'Gudang'} (${k.jumlah_keluar} dus) — ${new Date(k.tanggal_keluar).toLocaleDateString('id-ID')}`, value: k.id_keluar }))}>
                   <SelectTrigger><SelectValue placeholder="Pilih transaksi barang keluar" /></SelectTrigger>
                   <SelectContent>
                     {filteredBarangKeluar.length === 0 ? (

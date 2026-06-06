@@ -8,6 +8,7 @@ import {
   Database,
   Activity,
   BoxIcon,
+  Soup,
   ArrowDownCircle,
   ArrowUpCircle,
   RotateCcw,
@@ -55,6 +56,12 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Master Produk',
         href: '/dashboard/produk',
         icon: <BoxIcon size={18} />,
+        roles: ['superadmin', 'inventory_control'],
+      },
+      {
+        label: 'Varian Rasa',
+        href: '/dashboard/varian-rasa',
+        icon: <Soup size={18} />,
         roles: ['superadmin', 'inventory_control'],
       },
     ],
@@ -118,7 +125,7 @@ const MENU_GROUPS: MenuGroup[] = [
 ]
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: 'Super Admin',
+  superadmin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',

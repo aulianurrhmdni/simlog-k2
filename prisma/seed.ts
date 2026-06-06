@@ -31,6 +31,7 @@ async function main() {
   await prisma.stok.deleteMany()
   await prisma.parameterStok.deleteMany()
   await prisma.produk.deleteMany()
+  await prisma.varianRasa.deleteMany()
   await prisma.supplier.deleteMany()
   await prisma.pelanggan.deleteMany()
   await prisma.user.deleteMany()
@@ -42,7 +43,7 @@ async function main() {
   // USERS — 4 role sesuai revisi.md  | ID: user1..user4
   // ============================================================
   const users = [
-    { id: 'user1', email: 'admin@cahayaindomie.com',     name: 'Super Admin',  role: 'superadmin',        password: 'admin123' },
+    { id: 'user1', email: 'admin@cahayaindomie.com',     name: 'Admin',        role: 'superadmin',        password: 'admin123' },
     { id: 'user2', email: 'inventory@cahayaindomie.com', name: 'Budi Santoso', role: 'inventory_control', password: 'inventory123' },
     { id: 'user3', email: 'gudang@cahayaindomie.com',    name: 'Siti Rahayu',  role: 'warehouse_staff',   password: 'gudang123' },
     { id: 'user4', email: 'manager@cahayaindomie.com',   name: 'Ahmad Fauzi',  role: 'manager_gudang',    password: 'manager123' },
@@ -100,6 +101,39 @@ async function main() {
   }
 
   // ============================================================
+  // VARIAN RASA — katalog rasa Indomie | ID: varian1..varian10
+  // Diturunkan dari produkList (nama tanpa prefix "Indomie ")
+  // ============================================================
+  const tingkatPedasMap: Record<string, number> = {
+    'Indomie Goreng Pedas': 4,
+    'Indomie Goreng Cakalang': 2,
+    'Indomie Kuah Soto Mie': 1,
+    'Indomie Kuah Coto Makassar': 2,
+    'Indomie Kuah Aceh': 3,
+  }
+
+  for (let i = 0; i < produkList.length; i++) {
+    const p = produkList[i]
+    const namaVarian = p.namaProduk.replace(/^Indomie\s+/, '')
+    const varian = await prisma.varianRasa.create({
+      data: {
+        id: `varian${i + 1}`,
+        namaVarian,
+        kategori: p.kategori,
+        tingkatPedas: tingkatPedasMap[p.namaProduk] ?? 0,
+        deskripsi: `Varian rasa ${namaVarian}`,
+        aktif: true,
+      },
+    })
+    // Tautkan produk ke varian rasa-nya
+    await prisma.produk.update({
+      where: { id: createdProduk[i] },
+      data: { varianRasaId: varian.id },
+    })
+  }
+  console.log('  ✅ VarianRasa dibuat & ditautkan ke produk')
+
+  // ============================================================
   // STOK AWAL & PARAMETER STOK | ID: stok1.. & parameter1..
   // ============================================================
   const stokAwal = [120, 85, 15, 90, 10, 200, 45, 70, 22, 18]
@@ -145,16 +179,16 @@ async function main() {
   const icId = createdUsers['inventory_control']
 
   const sampleMasuk = [
-    { id: 'barangmasuk1', produkId: createdProduk[0], supplierId: createdSuppliers[0], jumlahMasuk: 100, batch: 'B-2026-001', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-01'), approvedById: managerId },
-    { id: 'barangmasuk2', produkId: createdProduk[1], supplierId: createdSuppliers[0], jumlahMasuk: 80,  batch: 'B-2026-002', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-05'), approvedById: icId },
-    { id: 'barangmasuk3', produkId: createdProduk[5], supplierId: createdSuppliers[1], jumlahMasuk: 200, batch: 'B-2026-003', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-10'), approvedById: managerId },
-    { id: 'barangmasuk4', produkId: createdProduk[6], supplierId: createdSuppliers[1], jumlahMasuk: 50,  batch: 'B-2026-004', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-20'), approvedById: null },
-    { id: 'barangmasuk5', produkId: createdProduk[2], supplierId: createdSuppliers[0], jumlahMasuk: 30,  batch: 'B-2026-005', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-22'), approvedById: null },
+    { id: 'barangmasuk1', produkId: createdProduk[0], supplierId: createdSuppliers[0], jumlahMasuk: 100, batch: 'B-2026-001', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-01'), approvedById: managerId, kesesuaianFisik: 'SESUAI',        catatanKesesuaian: 'Jumlah & batch sesuai surat jalan, kondisi dus baik.', tanggalExpired: new Date('2027-05-01') },
+    { id: 'barangmasuk2', produkId: createdProduk[1], supplierId: createdSuppliers[0], jumlahMasuk: 80,  batch: 'B-2026-002', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-05'), approvedById: icId,      kesesuaianFisik: 'SESUAI',        catatanKesesuaian: 'Diverifikasi Inventory Control, dokumen lengkap.',     tanggalExpired: new Date('2027-05-05') },
+    { id: 'barangmasuk3', produkId: createdProduk[5], supplierId: createdSuppliers[1], jumlahMasuk: 200, batch: 'B-2026-003', statusPenerimaan: 'DITERIMA', tanggalMasuk: new Date('2026-05-10'), approvedById: managerId, kesesuaianFisik: 'TIDAK_SESUAI',  catatanKesesuaian: 'Selisih 2 dus dari surat jalan, perlu konfirmasi supplier.', tanggalExpired: new Date('2026-01-15') },
+    { id: 'barangmasuk4', produkId: createdProduk[6], supplierId: createdSuppliers[1], jumlahMasuk: 50,  batch: 'B-2026-004', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-20'), approvedById: null,      kesesuaianFisik: 'BELUM_DICEK',   catatanKesesuaian: null,                                                  tanggalExpired: new Date('2027-05-20') },
+    { id: 'barangmasuk5', produkId: createdProduk[2], supplierId: createdSuppliers[0], jumlahMasuk: 30,  batch: 'B-2026-005', statusPenerimaan: 'PENDING',  tanggalMasuk: new Date('2026-05-22'), approvedById: null,      kesesuaianFisik: 'BELUM_DICEK',   catatanKesesuaian: null,                                                  tanggalExpired: new Date('2026-03-01') },
   ]
 
   for (const bm of sampleMasuk) {
     await prisma.barangMasuk.create({
-      data: { ...bm, dicatatOlehId: gudangId, tanggalExpired: new Date('2027-05-01') },
+      data: { ...bm, dicatatOlehId: gudangId },
     })
   }
   console.log('  ✅ Sample BarangMasuk dibuat')

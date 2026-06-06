@@ -133,7 +133,7 @@ export function BarangKeluarClient({ role }: BarangKeluarClientProps) {
           <form action={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label>Produk</Label>
-              <Select name="id_produk" required>
+              <Select name="id_produk" required items={produkList.map((p) => ({ label: p.nama_produk, value: p.id_produk }))}>
                 <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
                 <SelectContent>
                   {produkList.map((p) => (

@@ -46,6 +46,8 @@ export type BarangMasuk = {
   batch: string | null
   tanggal_expired: string | null
   status_penerimaan: string
+  kesesuaian_fisik: string
+  catatan_kesesuaian: string | null
   catatan: string | null
   dicatat_oleh: string
   approved_by: string | null
@@ -139,7 +141,7 @@ export type UserRole =
   | 'manager_gudang'
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  superadmin: 'Super Admin',
+  superadmin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',

@@ -12,7 +12,7 @@ interface HeaderProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: 'Super Admin',
+  superadmin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',

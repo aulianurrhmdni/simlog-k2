@@ -71,6 +71,8 @@ export function PengadaanClient({ role, permintaan, pelangganList, produkList }:
   const [activeFilter, setActiveFilter] = useState('Semua')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  // Mode pemilihan pelanggan: pilih dari daftar atau input manual
+  const [pelangganMode, setPelangganMode] = useState<'existing' | 'baru'>('existing')
 
   const canManage = role === 'superadmin' || role === 'inventory_control'
 
@@ -253,7 +255,10 @@ export function PengadaanClient({ role, permintaan, pelangganList, produkList }:
       </div>
 
       {/* Create Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open)
+        if (!open) setPelangganMode('existing')
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -263,24 +268,46 @@ export function PengadaanClient({ role, permintaan, pelangganList, produkList }:
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="pelanggan_id">Pelanggan <span className="text-red-500">*</span></Label>
-              <Select name="pelanggan_id" required>
-                <SelectTrigger id="pelanggan_id">
-                  <SelectValue placeholder="Pilih pelanggan..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {pelangganList.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.namaPelanggan}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pelanggan_id">Pelanggan <span className="text-red-500">*</span></Label>
+                <button
+                  type="button"
+                  onClick={() => setPelangganMode(pelangganMode === 'existing' ? 'baru' : 'existing')}
+                  className="text-xs font-medium text-teal-600 hover:text-teal-700"
+                >
+                  {pelangganMode === 'existing' ? '+ Input pelanggan manual' : '← Pilih dari daftar'}
+                </button>
+              </div>
+              {pelangganMode === 'existing' ? (
+                <Select name="pelanggan_id" required items={pelangganList.map(p => ({ label: p.namaPelanggan, value: p.id }))}>
+                  <SelectTrigger id="pelanggan_id">
+                    <SelectValue placeholder="Pilih pelanggan..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pelangganList.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.namaPelanggan}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <>
+                  <Input
+                    name="pelanggan_nama"
+                    placeholder="Ketik nama pelanggan baru..."
+                    required
+                  />
+                  <p className="text-xs text-slate-400">
+                    Pelanggan baru akan otomatis tersimpan ke daftar pelanggan.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="produk_id">Produk <span className="text-red-500">*</span></Label>
-              <Select name="produk_id" required>
+              <Select name="produk_id" required items={produkList.map(p => ({ label: p.namaProduk, value: p.id }))}>
                 <SelectTrigger id="produk_id">
                   <SelectValue placeholder="Pilih produk..." />
                 </SelectTrigger>

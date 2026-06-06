@@ -5,6 +5,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'superadmin']
+// Hanya Inventory Control (administrasi) yang menilai kesesuaian fisik dari Staf Gudang
+const IC_ROLES = ['inventory_control', 'superadmin']
+const KESESUAIAN_VALID = ['BELUM_DICEK', 'SESUAI', 'TIDAK_SESUAI']
 
 export async function createBarangMasuk(formData: FormData) {
   const session = await auth()
@@ -120,6 +123,39 @@ export async function verifyBarangMasuk(
   }
 }
 
+export async function updateKesesuaianFisik(
+  id: string,
+  kesesuaian: string,
+  catatan: string | null
+) {
+  const session = await auth()
+  if (!session?.user) return { error: 'Unauthorized' }
+
+  // Hanya Inventory Control yang menilai kesesuaian administrasi barang
+  if (!IC_ROLES.includes(session.user.role)) {
+    return { error: 'Hanya Inventory Control yang dapat menilai kesesuaian barang' }
+  }
+
+  if (!KESESUAIAN_VALID.includes(kesesuaian)) {
+    return { error: 'Nilai kesesuaian tidak valid' }
+  }
+
+  try {
+    await prisma.barangMasuk.update({
+      where: { id },
+      data: {
+        kesesuaianFisik: kesesuaian,
+        catatanKesesuaian: catatan?.trim() || null,
+      },
+    })
+
+    revalidatePath('/dashboard/barang-masuk')
+    return { success: true }
+  } catch (e: unknown) {
+    return { error: (e as Error).message }
+  }
+}
+
 export async function getBarangMasukData() {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
@@ -148,6 +184,8 @@ export async function getBarangMasukData() {
       batch: m.batch,
       tanggal_expired: m.tanggalExpired ? m.tanggalExpired.toISOString() : null,
       status_penerimaan: m.statusPenerimaan,
+      kesesuaian_fisik: m.kesesuaianFisik,
+      catatan_kesesuaian: m.catatanKesesuaian,
       catatan: m.catatan,
       dicatat_oleh: m.dicatatOleh?.name ?? null,
       approved_by: m.approvedBy?.name ?? null,

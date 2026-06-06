@@ -46,9 +46,11 @@ model Produk {
   satuan          String    @default("dus")
   stokMinimum     Int       @default(0)
   masaKedaluwarsa Int?
+  varianRasaId    String?
   createdAt       DateTime  @default(now())
 
   // Relations
+  varianRasa      VarianRasa? @relation(fields: [varianRasaId], references: [id])
   stok            Stok[]
   parameterStok   ParameterStok[]
   barangMasuk     BarangMasuk[]
@@ -81,6 +83,25 @@ model ParameterStok {
 }
 
 // ============================================================
+// VARIAN RASA — master katalog rasa Indomie
+// Mudah diinput langsung lewat Prisma Studio:
+//   namaVarian wajib & unik, sisanya punya default aman.
+// ============================================================
+
+model VarianRasa {
+  id           String   @id @default(uuid())
+  namaVarian   String   @unique          // contoh: "Goreng Rendang"
+  kategori     String   @default("Goreng") // "Goreng" | "Kuah"
+  tingkatPedas Int      @default(0)        // skala 0-5
+  deskripsi    String?
+  aktif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // Produk yang memakai varian rasa ini
+  produk       Produk[]
+}
+
+// ============================================================
 // SUPPLIER & BARANG MASUK
 // ============================================================
 
@@ -103,6 +124,10 @@ model BarangMasuk {
   batch             String?
   tanggalExpired    DateTime?
   statusPenerimaan  String    @default("PENDING")
+  // Verifikasi administrasi oleh Inventory Control:
+  // BELUM_DICEK | SESUAI | TIDAK_SESUAI
+  kesesuaianFisik   String    @default("BELUM_DICEK")
+  catatanKesesuaian String?
   catatan           String?
   dicatatOlehId     String?
   approvedById      String?

@@ -21,7 +21,7 @@ interface User {
 }
 
 const ROLES = [
-  { value: 'superadmin', label: 'Super Admin' },
+  { value: 'superadmin', label: 'Admin' },
   { value: 'inventory_control', label: 'Inventory Control Staf' },
   { value: 'warehouse_staff', label: 'Staf Gudang' },
   { value: 'manager_gudang', label: 'Manajer Gudang' },

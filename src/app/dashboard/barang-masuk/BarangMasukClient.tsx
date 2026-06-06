@@ -1,17 +1,41 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createBarangMasuk, verifyBarangMasuk, getBarangMasukData } from './actions'
+import { createBarangMasuk, verifyBarangMasuk, getBarangMasukData, updateKesesuaianFisik } from './actions'
 import { DataTable } from '@/components/ui/data-table'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { ArrowDownToLine, Plus, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowDownToLine, Plus, CheckCircle, XCircle, ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { BarangMasuk, Produk, Supplier } from '@/lib/types/database'
+
+const KESESUAIAN_OPTIONS = [
+  { value: 'BELUM_DICEK', label: 'Belum Dicek' },
+  { value: 'SESUAI', label: 'Sesuai' },
+  { value: 'TIDAK_SESUAI', label: 'Tidak Sesuai' },
+]
+
+const KESESUAIAN_STYLES: Record<string, string> = {
+  BELUM_DICEK: 'bg-slate-100 text-slate-600 border-slate-200',
+  SESUAI: 'bg-green-50 text-green-700 border-green-200',
+  TIDAK_SESUAI: 'bg-red-50 text-red-700 border-red-200',
+}
+
+const KESESUAIAN_LABELS: Record<string, string> = {
+  BELUM_DICEK: 'Belum Dicek',
+  SESUAI: 'Sesuai',
+  TIDAK_SESUAI: 'Tidak Sesuai',
+}
+
+function isExpired(tanggalExpired: string | null): boolean {
+  if (!tanggalExpired) return false
+  return new Date(tanggalExpired).getTime() < Date.now()
+}
 
 interface BarangMasukClientProps {
   role: string
@@ -24,8 +48,16 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  // Dialog penilaian kesesuaian (Inventory Control)
+  const [kesesuaianOpen, setKesesuaianOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<BarangMasuk | null>(null)
+  const [kesesuaianValue, setKesesuaianValue] = useState('BELUM_DICEK')
+  const [kesesuaianCatatan, setKesesuaianCatatan] = useState('')
+
   const canCreate = role === 'warehouse_staff' || role === 'superadmin'
   const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'superadmin'
+  // Inventory Control (administrasi) menilai kesesuaian barang dari Staf Gudang
+  const canKesesuaian = role === 'inventory_control' || role === 'superadmin'
 
   async function fetchData() {
     const res = await getBarangMasukData()
@@ -62,6 +94,26 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
     }
   }
 
+  function openKesesuaian(item: BarangMasuk) {
+    setSelectedItem(item)
+    setKesesuaianValue(item.kesesuaian_fisik || 'BELUM_DICEK')
+    setKesesuaianCatatan(item.catatan_kesesuaian ?? '')
+    setKesesuaianOpen(true)
+  }
+
+  async function handleKesesuaian() {
+    if (!selectedItem) return
+    const result = await updateKesesuaianFisik(selectedItem.id_masuk, kesesuaianValue, kesesuaianCatatan)
+    if (result?.error) {
+      toast.error('Gagal menyimpan kesesuaian', { description: result.error })
+    } else {
+      toast.success('Status kesesuaian barang diperbarui')
+      setKesesuaianOpen(false)
+      setSelectedItem(null)
+      fetchData()
+    }
+  }
+
   const columns = [
     {
       key: 'tanggal_masuk', header: 'Tanggal',
@@ -79,11 +131,47 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
     { key: 'batch', header: 'Batch' },
     {
       key: 'tanggal_expired', header: 'Expired',
-      render: (item: BarangMasuk) => item.tanggal_expired ? new Date(item.tanggal_expired).toLocaleDateString('id-ID') : '-',
+      render: (item: BarangMasuk) => {
+        if (!item.tanggal_expired) return '-'
+        const tgl = new Date(item.tanggal_expired).toLocaleDateString('id-ID')
+        return isExpired(item.tanggal_expired) ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">
+            <AlertTriangle className="h-3 w-3" /> Kedaluwarsa · {tgl}
+          </span>
+        ) : (
+          <span className="text-slate-600">{tgl}</span>
+        )
+      },
     },
     {
       key: 'status_penerimaan', header: 'Status',
       render: (item: BarangMasuk) => <StatusBadge status={item.status_penerimaan} />,
+    },
+    {
+      key: 'kesesuaian_fisik', header: 'Kesesuaian (IC)',
+      render: (item: BarangMasuk) => {
+        const val = item.kesesuaian_fisik || 'BELUM_DICEK'
+        const badge = (
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${KESESUAIAN_STYLES[val] ?? KESESUAIAN_STYLES.BELUM_DICEK}`}
+            title={item.catatan_kesesuaian ?? undefined}
+          >
+            {KESESUAIAN_LABELS[val] ?? val}
+          </span>
+        )
+        if (!canKesesuaian) return badge
+        return (
+          <button
+            type="button"
+            onClick={() => openKesesuaian(item)}
+            className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
+            title="Nilai kesesuaian barang"
+          >
+            {badge}
+            <ClipboardCheck className="h-3.5 w-3.5 text-slate-400" />
+          </button>
+        )
+      },
     },
     ...(canApprove
       ? [
@@ -133,7 +221,7 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
           <form action={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label>Produk</Label>
-              <Select name="id_produk" required>
+              <Select name="id_produk" required items={produkList.map((p) => ({ label: p.nama_produk, value: p.id_produk }))}>
                 <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
                 <SelectContent>
                   {produkList.map((p) => (
@@ -144,7 +232,7 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
             </div>
             <div className="space-y-2">
               <Label>Supplier</Label>
-              <Select name="id_supplier" required>
+              <Select name="id_supplier" required items={supplierList.map((s) => ({ label: s.nama_supplier, value: s.id_supplier }))}>
                 <SelectTrigger><SelectValue placeholder="Pilih supplier" /></SelectTrigger>
                 <SelectContent>
                   {supplierList.map((s) => (
@@ -172,6 +260,55 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
               <Button type="submit" className="bg-teal-600 hover:bg-teal-700">Simpan</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog penilaian kesesuaian — Inventory Control */}
+      <Dialog open={kesesuaianOpen} onOpenChange={setKesesuaianOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-teal-600" />
+              Penilaian Kesesuaian Barang
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">
+              Verifikasi administrasi apakah barang dari Staf Gudang sudah sesuai secara fisik & dokumen untuk{' '}
+              <span className="font-semibold text-slate-700">
+                {(selectedItem?.produk as unknown as Produk)?.nama_produk ?? 'produk ini'}
+              </span>.
+            </p>
+            <div className="space-y-2">
+              <Label>Status Kesesuaian</Label>
+              <Select
+                value={kesesuaianValue}
+                onValueChange={(val) => setKesesuaianValue(val || 'BELUM_DICEK')}
+                items={KESESUAIAN_OPTIONS}
+              >
+                <SelectTrigger><SelectValue placeholder="Pilih status" /></SelectTrigger>
+                <SelectContent>
+                  {KESESUAIAN_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Catatan (opsional)</Label>
+              <Textarea
+                value={kesesuaianCatatan}
+                onChange={(e) => setKesesuaianCatatan(e.target.value)}
+                placeholder="Cth: Jumlah & batch sesuai surat jalan, kondisi dus baik."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setKesesuaianOpen(false)}>Batal</Button>
+            <Button type="button" className="bg-teal-600 hover:bg-teal-700" onClick={handleKesesuaian}>
+              Simpan Penilaian
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
