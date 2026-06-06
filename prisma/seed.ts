@@ -43,7 +43,7 @@ async function main() {
   // USERS — 4 role sesuai revisi.md  | ID: user1..user4
   // ============================================================
   const users = [
-    { id: 'user1', email: 'admin@cahayaindomie.com',     name: 'Admin',        role: 'superadmin',        password: 'admin123' },
+    { id: 'user1', email: 'admin@cahayaindomie.com',     name: 'Admin',        role: 'admin',        password: 'admin123' },
     { id: 'user2', email: 'inventory@cahayaindomie.com', name: 'Budi Santoso', role: 'inventory_control', password: 'inventory123' },
     { id: 'user3', email: 'gudang@cahayaindomie.com',    name: 'Siti Rahayu',  role: 'warehouse_staff',   password: 'gudang123' },
     { id: 'user4', email: 'manager@cahayaindomie.com',   name: 'Ahmad Fauzi',  role: 'manager_gudang',    password: 'manager123' },

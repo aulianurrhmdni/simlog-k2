@@ -21,14 +21,14 @@ interface User {
 }
 
 const ROLES = [
-  { value: 'superadmin', label: 'Admin' },
+  { value: 'admin', label: 'Admin' },
   { value: 'inventory_control', label: 'Inventory Control Staf' },
   { value: 'warehouse_staff', label: 'Staf Gudang' },
   { value: 'manager_gudang', label: 'Manajer Gudang' },
 ]
 
 const ROLE_COLORS: Record<string, string> = {
-  superadmin: 'bg-yellow-100 text-yellow-700 border-yellow-250',
+  admin: 'bg-yellow-100 text-yellow-700 border-yellow-250',
   inventory_control: 'bg-blue-100 text-blue-700 border-blue-250',
   warehouse_staff: 'bg-emerald-100 text-emerald-700 border-emerald-250',
   manager_gudang: 'bg-purple-100 text-purple-700 border-purple-250',

@@ -4,17 +4,17 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
-const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'superadmin']
+const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'admin']
 // Hanya Inventory Control (administrasi) yang menilai kesesuaian fisik dari Staf Gudang
-const IC_ROLES = ['inventory_control', 'superadmin']
+const IC_ROLES = ['inventory_control', 'admin']
 const KESESUAIAN_VALID = ['BELUM_DICEK', 'SESUAI', 'TIDAK_SESUAI']
 
 export async function createBarangMasuk(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
 
-  // Hanya warehouse_staff (dan superadmin) yang bisa input
-  if (session.user.role !== 'warehouse_staff' && session.user.role !== 'superadmin') {
+  // Hanya warehouse_staff (dan admin) yang bisa input
+  if (session.user.role !== 'warehouse_staff' && session.user.role !== 'admin') {
     return { error: 'Hanya Staf Gudang yang dapat menginput barang masuk' }
   }
 
@@ -58,7 +58,7 @@ export async function verifyBarangMasuk(
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
 
-  // Hanya inventory_control atau manager_gudang (dan superadmin) yang bisa approve
+  // Hanya inventory_control atau manager_gudang (dan admin) yang bisa approve
   if (!APPROVER_ROLES.includes(session.user.role)) {
     return { error: 'Anda tidak memiliki akses untuk menyetujui atau menolak barang masuk' }
   }

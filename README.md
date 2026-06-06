@@ -25,7 +25,7 @@ Proyek ini dibangun menggunakan [Next.js](https://nextjs.org) (App Router), Pris
    ```bash
    npm run db:seed
    ```
-   *Catatan: Akun SuperAdmin akan dibuat (email: admin@teklog.com, password: adminpassword).*
+   *Catatan: Akun Admin akan dibuat (email: admin@teklog.com, password: adminpassword).*
 
 4. **Menjalankan Development Server**
    ```bash

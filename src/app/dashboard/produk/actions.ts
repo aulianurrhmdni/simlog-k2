@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 function checkPermission(role: string) {
-  return role === 'superadmin' || role === 'inventory_control'
+  return role === 'admin' || role === 'inventory_control'
 }
 
 export async function createProduk(formData: FormData) {

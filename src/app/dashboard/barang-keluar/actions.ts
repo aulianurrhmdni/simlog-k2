@@ -4,14 +4,14 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
-const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'superadmin']
+const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'admin']
 
 export async function createBarangKeluar(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
 
-  // Hanya warehouse_staff (dan superadmin) yang bisa input
-  if (session.user.role !== 'warehouse_staff' && session.user.role !== 'superadmin') {
+  // Hanya warehouse_staff (dan admin) yang bisa input
+  if (session.user.role !== 'warehouse_staff' && session.user.role !== 'admin') {
     return { error: 'Hanya Staf Gudang yang dapat mencatat barang keluar' }
   }
 

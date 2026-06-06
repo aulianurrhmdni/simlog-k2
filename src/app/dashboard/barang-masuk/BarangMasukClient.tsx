@@ -54,10 +54,10 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
   const [kesesuaianValue, setKesesuaianValue] = useState('BELUM_DICEK')
   const [kesesuaianCatatan, setKesesuaianCatatan] = useState('')
 
-  const canCreate = role === 'warehouse_staff' || role === 'superadmin'
-  const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'superadmin'
+  const canCreate = role === 'warehouse_staff' || role === 'admin'
+  const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'admin'
   // Inventory Control (administrasi) menilai kesesuaian barang dari Staf Gudang
-  const canKesesuaian = role === 'inventory_control' || role === 'superadmin'
+  const canKesesuaian = role === 'inventory_control' || role === 'admin'
 
   async function fetchData() {
     const res = await getBarangMasukData()

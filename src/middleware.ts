@@ -27,10 +27,10 @@ export default auth((req) => {
 
   const role = session?.user?.role as string | undefined
 
-  // SuperAdmin — akses penuh
-  if (role === 'superadmin') return NextResponse.next()
+  // Admin — akses penuh
+  if (role === 'admin') return NextResponse.next()
 
-  // Hanya superadmin yang bisa akses manajemen user
+  // Hanya admin yang bisa akses manajemen user
   if (path.startsWith('/dashboard/users')) {
     return NextResponse.redirect(new URL('/dashboard', nextUrl))
   }

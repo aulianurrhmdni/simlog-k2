@@ -12,14 +12,14 @@ interface HeaderProps {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: 'Admin',
+  admin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',
 }
 
 const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
-  superadmin: { bg: '#fef9c3', text: '#854d0e' },
+  admin: { bg: '#fef9c3', text: '#854d0e' },
   inventory_control: { bg: '#dbeafe', text: '#1e40af' },
   warehouse_staff: { bg: '#d1fae5', text: '#065f46' },
   manager_gudang: { bg: '#ede9fe', text: '#5b21b6' },

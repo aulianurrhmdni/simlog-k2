@@ -51,7 +51,7 @@ interface StokClientProps {
 export function StokClient({ stokList, role }: StokClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const canEdit = role === 'superadmin' || role === 'manager_gudang'
+  const canEdit = role === 'admin' || role === 'manager_gudang'
   const [editTarget, setEditTarget] = useState<StokWithProduk | null>(null)
 
   // controlled dialog fields

@@ -74,7 +74,7 @@ export function PengadaanClient({ role, permintaan, pelangganList, produkList }:
   // Mode pemilihan pelanggan: pilih dari daftar atau input manual
   const [pelangganMode, setPelangganMode] = useState<'existing' | 'baru'>('existing')
 
-  const canManage = role === 'superadmin' || role === 'inventory_control'
+  const canManage = role === 'admin' || role === 'inventory_control'
 
   const filtered = activeFilter === 'Semua'
     ? permintaan

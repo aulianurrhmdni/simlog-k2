@@ -58,7 +58,7 @@ export function LaporanClient({ role, laporanList, klasifikasi }: LaporanClientP
   const [jenisLaporan, setJenisLaporan] = useState('Laporan Stok Saat Ini')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
-  const canExport = role === 'superadmin' || role === 'manager_gudang'
+  const canExport = role === 'admin' || role === 'manager_gudang'
   // Inventory Control dapat mengunduh laporan Excel walau tidak bisa membuat entri baru
   const canDownload = canExport || role === 'inventory_control'
 

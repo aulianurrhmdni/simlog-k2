@@ -5,16 +5,16 @@ import { auth } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 import { revalidatePath } from 'next/cache'
 
-// Only superadmin can perform these actions
-async function requireSuperAdmin() {
+// Only admin can perform these actions
+async function requireAdmin() {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
-  if (session.user.role !== 'superadmin') return { error: 'Forbidden: Hanya SuperAdmin yang dapat mengakses' }
+  if (session.user.role !== 'admin') return { error: 'Forbidden: Hanya Admin yang dapat mengakses' }
   return { session }
 }
 
 export async function getUserList() {
-  const check = await requireSuperAdmin()
+  const check = await requireAdmin()
   if ('error' in check) return { error: check.error }
 
   const users = await prisma.user.findMany({
@@ -25,7 +25,7 @@ export async function getUserList() {
 }
 
 export async function createUser(formData: FormData) {
-  const check = await requireSuperAdmin()
+  const check = await requireAdmin()
   if ('error' in check) return { error: check.error }
 
   const email = formData.get('email') as string
@@ -33,7 +33,7 @@ export async function createUser(formData: FormData) {
   const role = formData.get('role') as string
   const password = formData.get('password') as string
 
-  const VALID_ROLES = ['superadmin', 'inventory_control', 'warehouse_staff', 'manager_gudang']
+  const VALID_ROLES = ['admin', 'inventory_control', 'warehouse_staff', 'manager_gudang']
 
   if (!email || !name || !role || !password) {
     return { error: 'Semua field wajib diisi' }
@@ -56,7 +56,7 @@ export async function createUser(formData: FormData) {
 }
 
 export async function updateUser(formData: FormData) {
-  const check = await requireSuperAdmin()
+  const check = await requireAdmin()
   if ('error' in check) return { error: check.error }
 
   const id = formData.get('id') as string
@@ -69,7 +69,7 @@ export async function updateUser(formData: FormData) {
     return { error: 'ID, Email, Nama, dan Role wajib diisi' }
   }
 
-  const VALID_ROLES = ['superadmin', 'inventory_control', 'warehouse_staff', 'manager_gudang']
+  const VALID_ROLES = ['admin', 'inventory_control', 'warehouse_staff', 'manager_gudang']
   if (!VALID_ROLES.includes(role)) {
     return { error: 'Role tidak valid' }
   }
@@ -94,7 +94,7 @@ export async function updateUser(formData: FormData) {
 }
 
 export async function deleteUser(id: string) {
-  const check = await requireSuperAdmin()
+  const check = await requireAdmin()
   if ('error' in check) return { error: check.error }
 
   // Prevent deleting self

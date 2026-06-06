@@ -135,13 +135,13 @@ export type LaporanStok = {
 
 // Role types — 4 roles sesuai revisi.md
 export type UserRole =
-  | 'superadmin'
+  | 'admin'
   | 'inventory_control'
   | 'warehouse_staff'
   | 'manager_gudang'
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  superadmin: 'Admin',
+  admin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',

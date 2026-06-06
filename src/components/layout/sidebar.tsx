@@ -38,31 +38,31 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Dashboard',
         href: '/dashboard',
         icon: <LayoutDashboard size={18} />,
-        roles: ['superadmin', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'inventory_control', 'manager_gudang'],
       },
       {
         label: 'Data Stok',
         href: '/dashboard/stok',
         icon: <Database size={18} />,
-        roles: ['superadmin', 'inventory_control', 'warehouse_staff', 'manager_gudang'],
+        roles: ['admin', 'inventory_control', 'warehouse_staff', 'manager_gudang'],
       },
       {
         label: 'Monitoring & Alert',
         href: '/dashboard/monitoring',
         icon: <Activity size={18} />,
-        roles: ['superadmin', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'inventory_control', 'manager_gudang'],
       },
       {
         label: 'Master Produk',
         href: '/dashboard/produk',
         icon: <BoxIcon size={18} />,
-        roles: ['superadmin', 'inventory_control'],
+        roles: ['admin', 'inventory_control'],
       },
       {
         label: 'Varian Rasa',
         href: '/dashboard/varian-rasa',
         icon: <Soup size={18} />,
-        roles: ['superadmin', 'inventory_control'],
+        roles: ['admin', 'inventory_control'],
       },
     ],
   },
@@ -73,19 +73,19 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Barang Masuk',
         href: '/dashboard/barang-masuk',
         icon: <ArrowDownCircle size={18} />,
-        roles: ['superadmin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
       },
       {
         label: 'Barang Keluar',
         href: '/dashboard/barang-keluar',
         icon: <ArrowUpCircle size={18} />,
-        roles: ['superadmin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
       },
       {
         label: 'Retur Barang',
         href: '/dashboard/retur',
         icon: <RotateCcw size={18} />,
-        roles: ['superadmin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
       },
     ],
   },
@@ -96,7 +96,7 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Pengadaan Barang',
         href: '/dashboard/pengadaan',
         icon: <ShoppingCart size={18} />,
-        roles: ['superadmin', 'inventory_control'],
+        roles: ['admin', 'inventory_control'],
       },
     ],
   },
@@ -107,7 +107,7 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Laporan Inventory',
         href: '/dashboard/laporan',
         icon: <FileBarChart2 size={18} />,
-        roles: ['superadmin', 'inventory_control', 'manager_gudang'],
+        roles: ['admin', 'inventory_control', 'manager_gudang'],
       },
     ],
   },
@@ -118,14 +118,14 @@ const MENU_GROUPS: MenuGroup[] = [
         label: 'Manajemen User',
         href: '/dashboard/users',
         icon: <Users size={18} />,
-        roles: ['superadmin'],
+        roles: ['admin'],
       },
     ],
   },
 ]
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: 'Admin',
+  admin: 'Admin',
   inventory_control: 'Inventory Control Staf',
   warehouse_staff: 'Staf Gudang',
   manager_gudang: 'Manajer Gudang',
@@ -337,13 +337,13 @@ export function Sidebar({ role }: SidebarProps) {
               fontSize: '11px',
               fontWeight: 600,
               background:
-                role === 'superadmin'
+                role === 'admin'
                   ? 'rgba(234,179,8,0.15)'
                   : role === 'manager_gudang'
                   ? 'rgba(59,130,246,0.15)'
                   : 'rgba(20,184,166,0.12)',
               color:
-                role === 'superadmin'
+                role === 'admin'
                   ? '#fbbf24'
                   : role === 'manager_gudang'
                   ? '#93c5fd'

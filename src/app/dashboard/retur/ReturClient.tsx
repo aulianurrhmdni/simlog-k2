@@ -39,10 +39,10 @@ export function ReturClient({ role }: ReturClientProps) {
   const [jenisRetur, setJenisRetur] = useState('DARI_PELANGGAN')
   const [selectedBarangKeluarId, setSelectedBarangKeluarId] = useState('')
 
-  const canCreate = role === 'warehouse_staff' || role === 'superadmin'
-  const canApproveIc = role === 'inventory_control' || role === 'superadmin'
-  const canApproveMg = role === 'manager_gudang' || role === 'superadmin'
-  const canReject = role === 'inventory_control' || role === 'manager_gudang' || role === 'superadmin'
+  const canCreate = role === 'warehouse_staff' || role === 'admin'
+  const canApproveIc = role === 'inventory_control' || role === 'admin'
+  const canApproveMg = role === 'manager_gudang' || role === 'admin'
+  const canReject = role === 'inventory_control' || role === 'manager_gudang' || role === 'admin'
 
   async function fetchData() {
     const res = await getReturData()

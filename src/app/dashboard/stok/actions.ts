@@ -9,7 +9,7 @@ export async function updateStok(formData: FormData) {
   if (!session?.user) return { error: 'Unauthorized' }
 
   const role = session.user.role
-  if (role !== 'superadmin' && role !== 'manager_gudang') {
+  if (role !== 'admin' && role !== 'manager_gudang') {
     return { error: 'Hanya Super Admin dan Manajer Gudang yang dapat mengubah data stok' }
   }
 

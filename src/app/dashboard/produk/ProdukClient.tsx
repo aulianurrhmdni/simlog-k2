@@ -81,7 +81,7 @@ export function ProdukClient({ role }: ProdukClientProps) {
 
   const [isPending, startTransition] = useTransition()
 
-  const canManage = role === 'superadmin' || role === 'inventory_control'
+  const canManage = role === 'admin' || role === 'inventory_control'
 
   async function fetchData() {
     setLoading(true)

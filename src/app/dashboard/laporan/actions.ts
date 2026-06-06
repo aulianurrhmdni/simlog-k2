@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
-const DOWNLOAD_ROLES = ['superadmin', 'manager_gudang', 'inventory_control']
+const DOWNLOAD_ROLES = ['admin', 'manager_gudang', 'inventory_control']
 
 export type KlasifikasiRow = {
   tanggal: string
@@ -129,7 +129,7 @@ export async function createLaporan(formData: FormData) {
   if (!session?.user) return { error: 'Unauthorized' }
 
   const role = session.user.role
-  if (role !== 'superadmin' && role !== 'manager_gudang') {
+  if (role !== 'admin' && role !== 'manager_gudang') {
     return { error: 'Hanya Super Admin dan Manajer Gudang yang dapat mengekspor/membuat laporan' }
   }
 

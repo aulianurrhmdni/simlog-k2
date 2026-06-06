@@ -7,7 +7,7 @@ export async function createPermintaan(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
   const role = session.user.role
-  if (role !== 'superadmin' && role !== 'inventory_control') {
+  if (role !== 'admin' && role !== 'inventory_control') {
     return { error: 'Hanya Super Admin dan Staf Inventory Control yang dapat membuat permintaan pengadaan' }
   }
   try {
@@ -55,7 +55,7 @@ export async function updateStatusPermintaan(id: string, status: string) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
   const role = session.user.role
-  if (role !== 'superadmin' && role !== 'inventory_control') {
+  if (role !== 'admin' && role !== 'inventory_control') {
     return { error: 'Hanya Super Admin dan Staf Inventory Control yang dapat memproses permintaan pengadaan' }
   }
   try {

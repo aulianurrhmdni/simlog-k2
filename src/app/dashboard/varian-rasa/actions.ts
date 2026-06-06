@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 const KATEGORI_VALID = ['Goreng', 'Kuah']
 
 function checkPermission(role: string) {
-  return role === 'superadmin' || role === 'inventory_control'
+  return role === 'admin' || role === 'inventory_control'
 }
 
 function parseForm(formData: FormData) {

@@ -5,17 +5,17 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 // Roles yang bisa approve retur
-const IC_ROLES = ['inventory_control', 'superadmin']
-const MG_ROLES = ['manager_gudang', 'superadmin']
-const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'superadmin']
+const IC_ROLES = ['inventory_control', 'admin']
+const MG_ROLES = ['manager_gudang', 'admin']
+const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'admin']
 
 export async function createRetur(formData: FormData) {
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
 
   const role = session.user.role
-  // Hanya warehouse_staff yang input retur (+ superadmin)
-  if (role !== 'warehouse_staff' && role !== 'superadmin') {
+  // Hanya warehouse_staff yang input retur (+ admin)
+  if (role !== 'warehouse_staff' && role !== 'admin') {
     return { error: 'Hanya Staf Gudang yang dapat menginput retur' }
   }
 

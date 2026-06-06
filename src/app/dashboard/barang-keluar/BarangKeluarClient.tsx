@@ -23,8 +23,8 @@ export function BarangKeluarClient({ role }: BarangKeluarClientProps) {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const canCreate = role === 'warehouse_staff' || role === 'superadmin'
-  const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'superadmin'
+  const canCreate = role === 'warehouse_staff' || role === 'admin'
+  const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'admin'
 
   async function fetchData() {
     const res = await getBarangKeluarData()
