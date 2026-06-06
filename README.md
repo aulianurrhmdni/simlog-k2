@@ -38,7 +38,11 @@ Proyek ini dibangun menggunakan [Next.js](https://nextjs.org) (App Router), Pris
    npm run db:studio
    ```
 
-Buka [http://localhost:3000](http://localhost:3000) di browser untuk melihat hasilnya.
+Buka **http://localhost:3000** di browser komputer untuk melihat hasilnya.
+
+Untuk membuka dari **HP / perangkat lain di WiFi yang sama**, pakai alamat **Network** yang dicetak di terminal saat `npm run dev`, contoh `http://192.168.x.x:3000` (ganti dengan IP komputer Anda). Pastikan firewall mengizinkan port 3000.
+
+> Tidak perlu menyetel `AUTH_SECRET` lagi — aplikasi sudah memakai nilai default bawaan. File `.env.local` bersifat opsional.
 
 ## Teknologi Utama
 - **Frontend:** Next.js 14, React, Tailwind CSS, shadcn/ui

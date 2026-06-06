@@ -1,6 +1,13 @@
 import type { NextAuthConfig } from 'next-auth'
 
+// Secret default supaya aplikasi jalan tanpa perlu set AUTH_SECRET di .env.
+// Tetap bisa di-override lewat env kalau mau pakai kunci sendiri.
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'teklog-global-inventory-secret-2026-jwt-key-xf8s'
+
 export const authConfig = {
+  secret: AUTH_SECRET,
+  // Percayai host apa pun (localhost maupun IP saat diakses dari HP/jaringan)
+  trustHost: true,
   pages: {
     signIn: '/login',
   },
