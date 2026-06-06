@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // Hanya impor ikon yang dipakai dari lucide-react, bukan seluruh barrel file.
+    // Mempercepat kompilasi dev & memperkecil bundle.
+    optimizePackageImports: ['lucide-react'],
   },
 }
 
