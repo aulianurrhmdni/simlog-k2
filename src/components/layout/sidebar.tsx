@@ -12,7 +12,6 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   RotateCcw,
-  ShoppingCart,
   FileBarChart2,
   Users,
   Shield,
@@ -59,10 +58,10 @@ const MENU_GROUPS: MenuGroup[] = [
         roles: ['admin', 'inventory_control'],
       },
       {
-        label: 'Varian Rasa',
+        label: 'Tambah Produk Baru',
         href: '/dashboard/varian-rasa',
         icon: <Soup size={18} />,
-        roles: ['admin', 'inventory_control'],
+        roles: ['admin', 'inventory_control', 'manager_gudang'],
       },
     ],
   },
@@ -86,17 +85,6 @@ const MENU_GROUPS: MenuGroup[] = [
         href: '/dashboard/retur',
         icon: <RotateCcw size={18} />,
         roles: ['admin', 'warehouse_staff', 'inventory_control', 'manager_gudang'],
-      },
-    ],
-  },
-  {
-    group: 'PENGADAAN',
-    items: [
-      {
-        label: 'Pengadaan Barang',
-        href: '/dashboard/pengadaan',
-        icon: <ShoppingCart size={18} />,
-        roles: ['admin', 'inventory_control'],
       },
     ],
   },

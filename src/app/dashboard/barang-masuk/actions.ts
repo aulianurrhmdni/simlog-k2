@@ -5,8 +5,8 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 
 const APPROVER_ROLES = ['inventory_control', 'manager_gudang', 'admin']
-// Hanya Inventory Control (administrasi) yang menilai kesesuaian fisik dari Staf Gudang
-const IC_ROLES = ['inventory_control', 'admin']
+// Hanya Staf Gudang yang menilai kesesuaian fisik saat input barang masuk
+const WAREHOUSE_ROLES = ['warehouse_staff', 'admin']
 const KESESUAIAN_VALID = ['BELUM_DICEK', 'SESUAI', 'TIDAK_SESUAI']
 
 export async function createBarangMasuk(formData: FormData) {
@@ -23,6 +23,8 @@ export async function createBarangMasuk(formData: FormData) {
   const jumlahMasuk = parseInt(formData.get('jumlah_masuk') as string, 10)
   const batch = (formData.get('batch') as string)?.trim() || null
   const tanggalExpiredRaw = formData.get('tanggal_expired') as string
+  const kesesuaianFisik = (formData.get('kesesuaian_fisik') as string) || 'BELUM_DICEK'
+  const catatan = (formData.get('catatan') as string)?.trim() || null
 
   if (!produkId || !supplierId || isNaN(jumlahMasuk) || jumlahMasuk <= 0) {
     return { error: 'Data tidak lengkap atau tidak valid' }
@@ -37,6 +39,8 @@ export async function createBarangMasuk(formData: FormData) {
         batch,
         tanggalExpired: tanggalExpiredRaw ? new Date(tanggalExpiredRaw) : null,
         statusPenerimaan: 'PENDING',
+        kesesuaianFisik: KESESUAIAN_VALID.includes(kesesuaianFisik) ? kesesuaianFisik : 'BELUM_DICEK',
+        catatan,
         dicatatOlehId: session.user.id,
       },
     })
@@ -131,9 +135,9 @@ export async function updateKesesuaianFisik(
   const session = await auth()
   if (!session?.user) return { error: 'Unauthorized' }
 
-  // Hanya Inventory Control yang menilai kesesuaian administrasi barang
-  if (!IC_ROLES.includes(session.user.role)) {
-    return { error: 'Hanya Inventory Control yang dapat menilai kesesuaian barang' }
+  // Hanya Staf Gudang yang menilai kesesuaian fisik barang
+  if (!WAREHOUSE_ROLES.includes(session.user.role)) {
+    return { error: 'Hanya Staf Gudang yang dapat menilai kesesuaian barang' }
   }
 
   if (!KESESUAIAN_VALID.includes(kesesuaian)) {

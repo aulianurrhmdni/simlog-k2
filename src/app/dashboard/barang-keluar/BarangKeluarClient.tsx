@@ -80,7 +80,7 @@ export function BarangKeluarClient({ role }: BarangKeluarClientProps) {
       render: (item: BarangKeluar) => <span className="font-medium">{(item.produk as unknown as Produk)?.nama_produk ?? '-'}</span>,
     },
     { key: 'jumlah_keluar', header: 'Jumlah' },
-    { key: 'tujuan', header: 'Tujuan' },
+    { key: 'tujuan', header: 'Nama Pelanggan' },
     {
       key: 'status_pengeluaran', header: 'Status',
       render: (item: BarangKeluar) => <StatusBadge status={item.status_pengeluaran} />,
@@ -147,8 +147,8 @@ export function BarangKeluarClient({ role }: BarangKeluarClientProps) {
               <Input name="jumlah_keluar" type="number" min="1" required />
             </div>
             <div className="space-y-2">
-              <Label>Tujuan</Label>
-              <Input name="tujuan" placeholder="Nama toko / distributor" />
+              <Label>Nama Pelanggan</Label>
+              <Input name="tujuan" placeholder="Nama pelanggan" />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>

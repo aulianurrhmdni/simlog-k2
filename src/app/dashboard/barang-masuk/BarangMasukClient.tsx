@@ -56,8 +56,8 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
 
   const canCreate = role === 'warehouse_staff' || role === 'admin'
   const canApprove = role === 'inventory_control' || role === 'manager_gudang' || role === 'admin'
-  // Inventory Control (administrasi) menilai kesesuaian barang dari Staf Gudang
-  const canKesesuaian = role === 'inventory_control' || role === 'admin'
+  // Staf Gudang menilai kesesuaian fisik barang saat input
+  const canKesesuaian = role === 'warehouse_staff' || role === 'admin'
 
   async function fetchData() {
     const res = await getBarangMasukData()
@@ -148,7 +148,7 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
       render: (item: BarangMasuk) => <StatusBadge status={item.status_penerimaan} />,
     },
     {
-      key: 'kesesuaian_fisik', header: 'Kesesuaian (IC)',
+      key: 'kesesuaian_fisik', header: 'Kesesuaian (Staf Gudang)',
       render: (item: BarangMasuk) => {
         const val = item.kesesuaian_fisik || 'BELUM_DICEK'
         const badge = (
@@ -172,6 +172,14 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
           </button>
         )
       },
+    },
+    {
+      key: 'catatan', header: 'Deskripsi Kondisi',
+      render: (item: BarangMasuk) => item.catatan ? (
+        <span className="text-slate-600 text-sm">{item.catatan}</span>
+      ) : (
+        <span className="text-slate-400">—</span>
+      ),
     },
     ...(canApprove
       ? [
@@ -254,6 +262,21 @@ export function BarangMasukClient({ role }: BarangMasukClientProps) {
             <div className="space-y-2">
               <Label>Tanggal Expired</Label>
               <Input name="tanggal_expired" type="date" />
+            </div>
+            <div className="space-y-2">
+              <Label>Kesesuaian Barang</Label>
+              <Select name="kesesuaian_fisik" items={KESESUAIAN_OPTIONS}>
+                <SelectTrigger><SelectValue placeholder="Pilih status kesesuaian" /></SelectTrigger>
+                <SelectContent>
+                  {KESESUAIAN_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Deskripsi Kondisi Barang</Label>
+              <Textarea name="catatan" placeholder="Cth: Kondisi barang baik, tidak ada kerusakan. / Ada sedikit kerusakan pada kemasan." />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
